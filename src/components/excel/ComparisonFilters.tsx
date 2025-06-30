@@ -3,6 +3,7 @@ import { ExcelComparisonSummary } from '../../models/ExcelComparisonResult';
 
 type VisibleSections = {
   missingParts: boolean;
+  itemNumberIssues: boolean;
   quantityIssues: boolean;
   descriptionIssues: boolean;
 };
@@ -22,13 +23,13 @@ export const ComparisonFilters: React.FC<ComparisonFiltersProps> = ({
   searchTerm,
   onSearchChange,
 }) => {
-  const totalIssues = results.inPrimaryOnly + results.inSecondaryOnly + results.quantityIssues + results.descriptionIssues;
+  const totalIssues = results.inPrimaryOnly + results.inSecondaryOnly + results.itemNumberIssues + results.quantityIssues + results.descriptionIssues;
 
   return (
     <div className="glass-card-dark p-6 animate-slide-up">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-300">{totalIssues}</div>
             <div className="text-glass-secondary text-sm">Total Issues</div>
@@ -36,6 +37,10 @@ export const ComparisonFilters: React.FC<ComparisonFiltersProps> = ({
           <div className="text-center">
             <div className="text-2xl font-bold text-red-300">{results.inPrimaryOnly + results.inSecondaryOnly}</div>
             <div className="text-glass-secondary text-sm">Missing Parts</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-orange-400">{results.itemNumberIssues}</div>
+            <div className="text-glass-secondary text-sm">Item # Issues</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-300">{results.quantityIssues}</div>
@@ -79,7 +84,7 @@ export const ComparisonFilters: React.FC<ComparisonFiltersProps> = ({
       {/* Section Toggles */}
       <div className="mt-6 border-t border-white border-opacity-20 pt-6">
         <h3 className="text-lg font-semibold text-glass mb-4">Show Sections:</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Missing Parts Toggle */}
           <label className="flex items-center cursor-pointer">
             <input
@@ -93,6 +98,22 @@ export const ComparisonFilters: React.FC<ComparisonFiltersProps> = ({
             </div>
             <span className="ml-3 text-glass">
               Missing Parts ({results.inPrimaryOnly + results.inSecondaryOnly})
+            </span>
+          </label>
+
+          {/* Item Number Issues Toggle */}
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={visibleSections.itemNumberIssues}
+              onChange={(e) => onSectionToggle('itemNumberIssues', e.target.checked)}
+              className="sr-only"
+            />
+            <div className={`glass-toggle ${visibleSections.itemNumberIssues ? 'active' : 'inactive'}`}>
+              <span className="glass-toggle-thumb" />
+            </div>
+            <span className="ml-3 text-glass">
+              Item Number Issues ({results.itemNumberIssues})
             </span>
           </label>
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ExcelComparisonSummary } from '../../models/ExcelComparisonResult';
 import { ComparisonFilters } from './ComparisonFilters';
 import { MissingPartsSection } from './MissingPartsSection';
+import { ItemNumberIssuesSection } from './ItemNumberIssuesSection';
 import { QuantityIssuesSection } from './QuantityIssuesSection';
 import { DescriptionIssuesSection } from './DescriptionIssuesSection';
 import { ExcelComparisonExport } from './ExcelComparisonExport';
@@ -25,6 +26,7 @@ export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsPr
   
   const [visibleSections, setVisibleSections] = useState({
     missingParts: true,
+    itemNumberIssues: true,
     quantityIssues: true,
     descriptionIssues: true,
   });
@@ -53,12 +55,14 @@ export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsPr
   // Categorize filtered results
   const categorizedResults = useMemo(() => {
     const missingParts = filteredResults.filter(r => r.inPrimaryOnly || r.inSecondaryOnly);
+    const itemNumberIssues = filteredResults.filter(r => r.itemNumberIssue && !r.inPrimaryOnly && !r.inSecondaryOnly);
     const quantityIssues = filteredResults.filter(r => r.quantityIssue && !r.inPrimaryOnly && !r.inSecondaryOnly);
     const descriptionIssues = filteredResults.filter(r => r.descriptionIssue && !r.inPrimaryOnly && !r.inSecondaryOnly);
     
     console.log('Categorized Results:', {
       totalFiltered: filteredResults.length,
       missingParts: missingParts.length,
+      itemNumberIssues: itemNumberIssues.length,
       quantityIssues: quantityIssues.length,
       descriptionIssues: descriptionIssues.length,
       sampleResult: filteredResults[0]
@@ -66,6 +70,7 @@ export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsPr
     
     return {
       missingParts,
+      itemNumberIssues,
       quantityIssues,
       descriptionIssues,
     };
@@ -88,7 +93,7 @@ export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsPr
     }));
   };
 
-  const handleSectionToggle = (section: 'missingParts' | 'quantityIssues' | 'descriptionIssues', visible: boolean) => {
+  const handleSectionToggle = (section: 'missingParts' | 'itemNumberIssues' | 'quantityIssues' | 'descriptionIssues', visible: boolean) => {
     setVisibleSections(prev => ({
       ...prev,
       [section]: visible
@@ -123,6 +128,17 @@ export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsPr
             missingParts={categorizedResults.missingParts}
             comments={comments}
             onCommentChange={handleCommentChange}
+          />
+        )}
+
+        {/* Item Number Issues */}
+        {visibleSections.itemNumberIssues && (
+          <ItemNumberIssuesSection
+            itemNumberIssues={categorizedResults.itemNumberIssues}
+            comments={comments}
+            updateSources={updateSources}
+            onCommentChange={handleCommentChange}
+            onUpdateSourceChange={handleUpdateSourceChange}
           />
         )}
 

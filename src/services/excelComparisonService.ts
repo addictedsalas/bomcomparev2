@@ -34,7 +34,18 @@ export const compareExcelBoms = (
         secondaryDescription: secondaryItem.description,
         
         // Check for issues using normalized comparison
-        itemNumberIssue: !areTextsEquivalent(primaryItem.itemNumber, secondaryItem.itemNumber),
+        itemNumberIssue: (() => {
+          const issueDifferent = !areTextsEquivalent(primaryItem.itemNumber, secondaryItem.itemNumber);
+          if (issueDifferent) {
+            console.log(`Item Number Issue for ${primaryItem.partNumber}:`, {
+              solidworks: `"${primaryItem.itemNumber}"`,
+              duro: `"${secondaryItem.itemNumber}"`,
+              normalizedSolidworks: `"${normalizeText(primaryItem.itemNumber)}"`,
+              normalizedDuro: `"${normalizeText(secondaryItem.itemNumber)}"`
+            });
+          }
+          return issueDifferent;
+        })(),
         quantityIssue: !areTextsEquivalent(primaryItem.quantity, secondaryItem.quantity),
         descriptionIssue: !areTextsEquivalent(primaryItem.description, secondaryItem.description),
       };
