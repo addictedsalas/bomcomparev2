@@ -228,7 +228,7 @@ export default function Home() {
                 alt="Company Logo" 
                 width={400}
                 height={138}
-                className="h-16 mx-auto mb-4"
+                className="w-64 mx-auto mb-4"
               />
             </div>
             <h1 className="text-4xl font-bold text-glass mb-2">
