@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ExcelComparisonSummary, ExcelComparisonResult } from '../../models/ExcelComparisonResult';
+import { ExcelComparisonSummary } from '../../models/ExcelComparisonResult';
 import { ComparisonFilters } from './ComparisonFilters';
 import { MissingPartsSection } from './MissingPartsSection';
 import { QuantityIssuesSection } from './QuantityIssuesSection';

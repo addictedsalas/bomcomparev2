@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ExcelComparisonSummary, ExcelComparisonResult } from '../../models/ExcelComparisonResult';
 import { ExcelComparisonExport } from './ExcelComparisonExport';
 import { normalizeText } from '../../utils/textUtils';
-import * as XLSX from 'xlsx';
 
 interface ExcelComparisonResultsProps {
   results: ExcelComparisonSummary;
@@ -80,10 +79,6 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
     return 'none';
   };
 
-  // Get all issues for a part number
-  const getPartIssues = (partNumber: string): ExcelComparisonResult[] => {
-    return results.results.filter(result => result.partNumber === partNumber);
-  };
 
   // Toggle ignore state for an item
   const toggleIgnoreItem = (result: ExcelComparisonResult) => {
@@ -94,41 +89,14 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
     }));
   };
 
-  // Toggle all issues for a part number
-  const toggleAllIssuesForPart = (partNumber: string) => {
-    const issues = getPartIssues(partNumber);
-    const issueKeys = issues.map(issue => `${issue.partNumber}-${getIssueType(issue)}`);
-    
-    // Check if all issues are currently ignored
-    const allIgnored = issueKeys.every(key => !!ignoredItems[key]);
-    
-    // Toggle all issues based on current state
-    setIgnoredItems(prev => {
-      const newIgnoredItems = { ...prev };
-      issueKeys.forEach(key => {
-        newIgnoredItems[key] = !allIgnored;
-      });
-      return newIgnoredItems;
-    });
-  };
 
   // Check if an item is ignored
-  const isItemIgnored = (result: ExcelComparisonResult): boolean => {
+  const isItemIgnored = useCallback((result: ExcelComparisonResult): boolean => {
     const key = `${result.partNumber}-${getIssueType(result)}`;
     return !!ignoredItems[key];
-  };
+  }, [ignoredItems]);
 
-  // Check if all issues for a part are ignored
-  const areAllIssuesIgnored = (partNumber: string): boolean => {
-    const issues = getPartIssues(partNumber);
-    return issues.every(issue => isItemIgnored(issue));
-  };
 
-  // Check if any issues for a part are ignored
-  const areAnyIssuesIgnored = (partNumber: string): boolean => {
-    const issues = getPartIssues(partNumber);
-    return issues.some(issue => isItemIgnored(issue));
-  };
 
   // Update summary stats when ignored items change
   useEffect(() => {
@@ -144,7 +112,7 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
       inPrimaryOnly: filteredResults.filter(r => r.inPrimaryOnly).length,
       inSecondaryOnly: filteredResults.filter(r => r.inSecondaryOnly).length,
     });
-  }, [ignoredItems, results]);
+  }, [ignoredItems, results, isItemIgnored]);
 
   // Save ignored items to localStorage when they change
   useEffect(() => {
@@ -221,7 +189,7 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
   };
 
   // Generate action plan based on update preferences
-  const generateActionPlan = () => {
+  // const generateActionPlan = () => {
     // Prepare data for action plan
     const pdmUpdates: Array<{
       partNumber: string;
@@ -330,7 +298,7 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
+  // };
 
   return (
     <div ref={resultsRef} className="space-y-6">
@@ -424,7 +392,7 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
         </div>
         {searchTerm && (
           <div className="mt-3 text-sm text-gray-600">
-            Found {filteredResults.length} results for "{searchTerm}"
+            Found {filteredResults.length} results for &quot;{searchTerm}&quot;
           </div>
         )}
       </div>

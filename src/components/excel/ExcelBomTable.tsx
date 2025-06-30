@@ -135,12 +135,12 @@ export const ExcelBomTable: React.FC<ExcelBomTableProps> = ({ bomExcelFile, sour
         // Parse rows into ExcelBomItems
         const items: ExcelBomItem[] = [];
         for (let i = 1; i < rawData.length; i++) {
-          const row = rawData[i] as any[];
+          const row = rawData[i] as unknown[];
           if (!row || row.length === 0) continue;
 
           // Get part number first - this is our key identifier
           const partNumber = cpnCol !== -1 && row[cpnCol] 
-            ? row[cpnCol]?.toString().trim() 
+            ? String(row[cpnCol] || '').trim()
             : '';
             
           // Skip rows without part numbers
@@ -149,7 +149,7 @@ export const ExcelBomTable: React.FC<ExcelBomTableProps> = ({ bomExcelFile, sour
           // Parse the item number, default to index if not found or invalid
           let itemNumber = i;
           if (itemNumberCol !== -1 && row[itemNumberCol]) {
-            const itemStr = row[itemNumberCol].toString().trim();
+            const itemStr = String(row[itemNumberCol] || '').trim();
             const parsedItem = parseInt(itemStr);
             if (!isNaN(parsedItem)) {
               itemNumber = parsedItem;
@@ -160,10 +160,10 @@ export const ExcelBomTable: React.FC<ExcelBomTableProps> = ({ bomExcelFile, sour
             itemNumber,
             partNumber,
             description: descriptionCol !== -1 && row[descriptionCol] 
-              ? row[descriptionCol]?.toString().trim() 
+              ? String(row[descriptionCol] || '').trim()
               : '',
             quantity: quantityCol !== -1 && row[quantityCol] 
-              ? row[quantityCol]?.toString().trim() 
+              ? String(row[quantityCol] || '').trim()
               : ''
           };
 

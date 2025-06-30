@@ -41,7 +41,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose })
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">2</div>
             <div>
-              <h4 className="text-lg font-semibold text-glass mb-2">Click "Export this component"</h4>
+              <h4 className="text-lg font-semibold text-glass mb-2">Click &quot;Export this component&quot;</h4>
               <p className="text-glass-secondary">Look for the export button in the top right corner of the page.</p>
             </div>
           </div>
@@ -49,15 +49,15 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose })
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">3</div>
             <div>
-              <h4 className="text-lg font-semibold text-glass mb-2">Select "One level BOM"</h4>
-              <p className="text-glass-secondary">Open the dropdown below "Export Settings" and choose "One level BOM".</p>
+              <h4 className="text-lg font-semibold text-glass mb-2">Select &quot;One level BOM&quot;</h4>
+              <p className="text-glass-secondary">Open the dropdown below &quot;Export Settings&quot; and choose &quot;One level BOM&quot;.</p>
             </div>
           </div>
 
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">4</div>
             <div>
-              <h4 className="text-lg font-semibold text-glass mb-2">Click "Export"</h4>
+              <h4 className="text-lg font-semibold text-glass mb-2">Click &quot;Export&quot;</h4>
               <p className="text-glass-secondary">This will download your top-level assembly BOM file.</p>
             </div>
           </div>
@@ -88,7 +88,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose })
             <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">3</div>
             <div>
               <h4 className="text-lg font-semibold text-glass mb-2">Configure for top-level only</h4>
-              <p className="text-glass-secondary">In the BOM properties, set the BOM Type to "Top-level only" to match DURO export.</p>
+              <p className="text-glass-secondary">In the BOM properties, set the BOM Type to &quot;Top-level only&quot; to match DURO export.</p>
             </div>
           </div>
 
@@ -107,7 +107,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose })
               </svg>
               <div>
                 <p className="text-sm text-glass-secondary">
-                  <strong className="text-glass">Tip:</strong> Avoid special characters like "#" in your file path, as they can prevent SOLIDWORKS from saving Excel files.
+                  <strong className="text-glass">Tip:</strong> Avoid special characters like &quot;#&quot; in your file path, as they can prevent SOLIDWORKS from saving Excel files.
                 </p>
               </div>
             </div>

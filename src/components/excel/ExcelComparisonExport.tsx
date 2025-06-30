@@ -7,7 +7,7 @@ import { ExcelComparisonSummary, ExcelComparisonResult } from '../../models/Exce
 // Add type definitions for jsPDF with autoTable
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: any) => void;
+    autoTable: (options: Record<string, unknown>) => void;
     lastAutoTable: {
       finalY: number;
     };
@@ -147,7 +147,6 @@ export const ExcelComparisonExport: React.FC<ExcelComparisonExportProps> = ({
       results.results
         .filter(result => result.inPrimaryOnly || result.inSecondaryOnly)
         .forEach(result => {
-          const source = getUpdateSource(result);
           csvContent += `${result.partNumber},`;
           csvContent += `${result.inPrimaryOnly ? result.primaryItemNumber : result.secondaryItemNumber},`;
           csvContent += `"${result.inPrimaryOnly ? result.primaryDescription : result.secondaryDescription}",`;
