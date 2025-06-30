@@ -226,8 +226,8 @@ export default function Home() {
               <Image 
                 src="/images/logo.png" 
                 alt="Company Logo" 
-                width={64}
-                height={64}
+                width={400}
+                height={138}
                 className="h-16 mx-auto mb-4"
               />
             </div>
