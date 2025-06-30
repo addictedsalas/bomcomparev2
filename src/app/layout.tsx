@@ -13,8 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BOM Comparison Tool",
-  description: "Compare SOLIDWORKS and DURO BOMs",
+  title: "BOM Comparison Tool - Compare SOLIDWORKS & DURO BOMs",
+  description: "Efficiently compare and analyze Bill of Materials (BOMs) between SOLIDWORKS and DURO systems. Identify discrepancies, missing parts, and quantity differences with ease.",
+  icons: {
+    icon: '/images/ionqfavicon.svg',
+    shortcut: '/images/ionqfavicon.svg',
+    apple: '/images/ionqfavicon.svg',
+  },
 };
 
 export default function RootLayout({
