@@ -34,7 +34,7 @@ export const parseExcelFile = (file: File, isPrimary: boolean): Promise<ExcelBom
         };
         
         // Define possible header names for each column
-        const itemNumberNames = ['item no', 'item number', 'item', 'item #', 'line', 'position'];
+        const itemNumberNames = ['item no', 'item number', 'item #', 'line', 'position'];
         const partNumberNames = ['part number', 'part no', 'part #', 'cpn', 'pn', 'number', 'partnumber'];
         const descriptionNames = ['description', 'desc', 'name', 'title', 'part name'];
         const quantityNames = ['qty', 'quantity', 'count', 'amount', 'qty.'];
