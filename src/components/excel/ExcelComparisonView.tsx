@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ExcelBomData } from '../../models/ExcelBomData';
 import { ExcelComparisonSummary } from '../../models/ExcelComparisonResult';
-import { parseExcelFile } from '../../utils/excelParser';
+import { parseExcelFile, parseExcelFileWithRawData } from '../../utils/excelParser';
 import { compareExcelBoms } from '../../services/excelComparisonService';
 import { ExcelComparisonResults } from './ExcelComparisonResults';
 import { ExcelBomTable } from './ExcelBomTable';
@@ -17,6 +17,7 @@ export const ExcelComparisonView: React.FC = () => {
   const [tablesExpanded, setTablesExpanded] = useState<boolean>(true);
   const [primaryDragActive, setPrimaryDragActive] = useState<boolean>(false);
   const [secondaryDragActive, setSecondaryDragActive] = useState<boolean>(false);
+  const [originalDuroData, setOriginalDuroData] = useState<unknown[] | null>(null);
   
   const primaryFileInputRef = useRef<HTMLInputElement>(null);
   const secondaryFileInputRef = useRef<HTMLInputElement>(null);
@@ -67,8 +68,9 @@ export const ExcelComparisonView: React.FC = () => {
       setError(null);
       const file = e.target.files[0];
       setSecondaryFile(file);
-      const data = await parseExcelFile(file, false); // false for DURO BOM
-      setSecondaryBom(data);
+      const result = await parseExcelFileWithRawData(file, false); // false for DURO BOM
+      setSecondaryBom(result.bomData);
+      setOriginalDuroData(result.rawData);
       
       // Reset comparison results when a new file is uploaded
       setComparisonResults(null);
@@ -157,8 +159,9 @@ export const ExcelComparisonView: React.FC = () => {
       setLoading(true);
       setError(null);
       setSecondaryFile(file);
-      const data = await parseExcelFile(file, false); // false for DURO BOM
-      setSecondaryBom(data);
+      const result = await parseExcelFileWithRawData(file, false); // false for DURO BOM
+      setSecondaryBom(result.bomData);
+      setOriginalDuroData(result.rawData);
       
       // Reset comparison results when a new file is uploaded
       setComparisonResults(null);
@@ -429,7 +432,7 @@ export const ExcelComparisonView: React.FC = () => {
       {/* Comparison Results */}
       {comparisonResults && (
         <div ref={resultsRef}>
-          <ExcelComparisonResults results={comparisonResults} />
+          <ExcelComparisonResults results={comparisonResults} originalDuroData={originalDuroData} />
         </div>
       )}
     </div>

@@ -5,9 +5,10 @@ import { normalizeText } from '../../utils/textUtils';
 
 interface ExcelComparisonResultsProps {
   results: ExcelComparisonSummary;
+  originalDuroData?: unknown[] | null;
 }
 
-const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results }) => {
+const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results, originalDuroData }) => {
   const [updateSources, setUpdateSources] = useState<Record<string, { pdm: boolean; duro: boolean }>>(() => {
     // Load update sources from localStorage
     const savedUpdateSources = localStorage.getItem('bom-comparison-update-sources');
@@ -309,6 +310,7 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
             results={results}
             updateSources={updateSources}
             comments={comments}
+            originalDuroData={originalDuroData}
           />
           <button
             onClick={resetIgnoredItems}

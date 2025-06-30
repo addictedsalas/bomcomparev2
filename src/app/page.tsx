@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { ExcelBomData } from '@/models/ExcelBomData';
 import { ExcelComparisonSummary } from '@/models/ExcelComparisonResult';
-import { parseExcelFile } from '@/utils/excelParser';
+import { parseExcelFile, parseExcelFileWithRawData } from '@/utils/excelParser';
 import { compareExcelBoms } from '@/services/excelComparisonService';
 import { SimplifiedComparisonResults } from '@/components/excel/SimplifiedComparisonResults';
 import { TutorialModal } from '@/components/modals/TutorialModal';
@@ -20,6 +20,7 @@ export default function Home() {
   const [primaryDragActive, setPrimaryDragActive] = useState<boolean>(false);
   const [secondaryDragActive, setSecondaryDragActive] = useState<boolean>(false);
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
+  const [originalDuroData, setOriginalDuroData] = useState<unknown[] | null>(null);
   
   const primaryFileInputRef = useRef<HTMLInputElement>(null);
   const secondaryFileInputRef = useRef<HTMLInputElement>(null);
@@ -75,8 +76,9 @@ export default function Home() {
       setError(null);
       const file = e.target.files[0];
       setSecondaryFile(file);
-      const data = await parseExcelFile(file, false); // false for DURO BOM
-      setSecondaryBom(data);
+      const result = await parseExcelFileWithRawData(file, false); // false for DURO BOM
+      setSecondaryBom(result.bomData);
+      setOriginalDuroData(result.rawData);
       
       // Reset comparison results when a new file is uploaded
       setComparisonResults(null);
@@ -162,8 +164,9 @@ export default function Home() {
       setLoading(true);
       setError(null);
       setSecondaryFile(file);
-      const data = await parseExcelFile(file, false);
-      setSecondaryBom(data);
+      const result = await parseExcelFileWithRawData(file, false);
+      setSecondaryBom(result.bomData);
+      setOriginalDuroData(result.rawData);
       setComparisonResults(null);
     } catch (err) {
       setError('Failed to parse DURO Excel file. Please check the format.');
@@ -430,7 +433,7 @@ export default function Home() {
                 <h2 className="text-3xl font-bold text-glass mb-6 text-center">
                   Comparison Results
                 </h2>
-                <SimplifiedComparisonResults results={comparisonResults} />
+                <SimplifiedComparisonResults results={comparisonResults} originalDuroData={originalDuroData} />
               </div>
             </div>
           )}

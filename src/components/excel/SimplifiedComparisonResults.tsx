@@ -9,9 +9,10 @@ import { ExcelComparisonExport } from './ExcelComparisonExport';
 
 interface SimplifiedComparisonResultsProps {
   results: ExcelComparisonSummary;
+  originalDuroData?: unknown[] | null;
 }
 
-export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsProps> = ({ results }) => {
+export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsProps> = ({ results, originalDuroData }) => {
   const [updateSources, setUpdateSources] = useState<Record<string, { pdm: boolean; duro: boolean }>>(() => {
     const saved = localStorage.getItem('bom-comparison-update-sources');
     return saved ? JSON.parse(saved) : {};
@@ -117,6 +118,7 @@ export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsPr
           results={results}
           updateSources={updateSources}
           comments={comments}
+          originalDuroData={originalDuroData}
         />
       </div>
 
@@ -136,9 +138,9 @@ export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsPr
           <ItemNumberIssuesSection
             itemNumberIssues={categorizedResults.itemNumberIssues}
             comments={comments}
-            updateSources={updateSources}
             onCommentChange={handleCommentChange}
-            onUpdateSourceChange={handleUpdateSourceChange}
+            results={results}
+            originalDuroData={originalDuroData}
           />
         )}
 
