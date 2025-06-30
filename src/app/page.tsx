@@ -8,6 +8,7 @@ import { parseExcelFile, parseExcelFileWithRawData } from '@/utils/excelParser';
 import { compareExcelBoms } from '@/services/excelComparisonService';
 import { SimplifiedComparisonResults } from '@/components/excel/SimplifiedComparisonResults';
 import { TutorialModal } from '@/components/modals/TutorialModal';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 
 export default function Home() {
   const [primaryBom, setPrimaryBom] = useState<ExcelBomData | null>(null);
@@ -446,6 +447,9 @@ export default function Home() {
         isOpen={showTutorial}
         onClose={() => setShowTutorial(false)}
       />
+      
+      {/* Feedback Button */}
+      <FeedbackButton />
     </main>
   );
 }
