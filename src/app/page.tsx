@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { ExcelBomData } from '@/models/ExcelBomData';
 import { ExcelComparisonSummary } from '@/models/ExcelComparisonResult';
 import { parseExcelFile } from '@/utils/excelParser';
@@ -222,9 +223,11 @@ export default function Home() {
             </button>
 
             <div className="mb-6">
-              <img 
+              <Image 
                 src="/images/logo.png" 
                 alt="Company Logo" 
+                width={64}
+                height={64}
                 className="h-16 mx-auto mb-4"
               />
             </div>
