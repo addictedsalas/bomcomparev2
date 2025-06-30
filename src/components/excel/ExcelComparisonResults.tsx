@@ -65,7 +65,7 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
 
   // Helper function to toggle section collapse state
   const toggleSectionCollapse = (section: keyof typeof collapsedSections) => {
-    setCollapsedSections(prev => ({
+    setCollapsedSections((prev: typeof collapsedSections) => ({
       ...prev,
       [section]: !prev[section]
     }));
@@ -223,8 +223,20 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
   // Generate action plan based on update preferences
   const generateActionPlan = () => {
     // Prepare data for action plan
-    const pdmUpdates = [];
-    const duroUpdates = [];
+    const pdmUpdates: Array<{
+      partNumber: string;
+      issueType: string;
+      currentValue: string;
+      newValue: string;
+      comment: string;
+    }> = [];
+    const duroUpdates: Array<{
+      partNumber: string;
+      issueType: string;
+      currentValue: string;
+      newValue: string;
+      comment: string;
+    }> = [];
 
     // Process all non-ignored items with update preferences
     results.results
@@ -238,8 +250,8 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
 
         // Determine issue type
         let issueType = '';
-        if (result.missingInPrimary) issueType = 'Missing in PDM';
-        else if (result.missingInSecondary) issueType = 'Missing in DURO';
+        if (result.inSecondaryOnly) issueType = 'Missing in PDM';
+        else if (result.inPrimaryOnly) issueType = 'Missing in DURO';
         else if (result.itemNumberIssue) issueType = 'Item Number Issue';
         else if (result.quantityIssue) issueType = 'Quantity Issue';
         else if (result.descriptionIssue) issueType = 'Description Issue';
@@ -250,14 +262,14 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
           pdmUpdates.push({
             partNumber: result.partNumber,
             issueType,
-            currentValue: result.missingInPrimary ? 'Missing' :
-              result.itemNumberIssue ? result.primaryItemNumber :
-              result.quantityIssue ? result.primaryQuantity :
-              result.descriptionIssue ? result.primaryDescription : '',
-            newValue: result.missingInPrimary ? 'Add part' :
-              result.itemNumberIssue ? result.secondaryItemNumber :
-              result.quantityIssue ? result.secondaryQuantity :
-              result.descriptionIssue ? result.secondaryDescription : '',
+            currentValue: result.inSecondaryOnly ? 'Missing' :
+              result.itemNumberIssue ? (result.primaryItemNumber || '') :
+              result.quantityIssue ? (result.primaryQuantity || '') :
+              result.descriptionIssue ? (result.primaryDescription || '') : '',
+            newValue: result.inSecondaryOnly ? 'Add part' :
+              result.itemNumberIssue ? (result.secondaryItemNumber || '') :
+              result.quantityIssue ? (result.secondaryQuantity || '') :
+              result.descriptionIssue ? (result.secondaryDescription || '') : '',
             comment
           });
         }
@@ -267,14 +279,14 @@ const ExcelComparisonResults: React.FC<ExcelComparisonResultsProps> = ({ results
           duroUpdates.push({
             partNumber: result.partNumber,
             issueType,
-            currentValue: result.missingInSecondary ? 'Missing' :
-              result.itemNumberIssue ? result.secondaryItemNumber :
-              result.quantityIssue ? result.secondaryQuantity :
-              result.descriptionIssue ? result.secondaryDescription : '',
-            newValue: result.missingInSecondary ? 'Add part' :
-              result.itemNumberIssue ? result.primaryItemNumber :
-              result.quantityIssue ? result.primaryQuantity :
-              result.descriptionIssue ? result.primaryDescription : '',
+            currentValue: result.inPrimaryOnly ? 'Missing' :
+              result.itemNumberIssue ? (result.secondaryItemNumber || '') :
+              result.quantityIssue ? (result.secondaryQuantity || '') :
+              result.descriptionIssue ? (result.secondaryDescription || '') : '',
+            newValue: result.inPrimaryOnly ? 'Add part' :
+              result.itemNumberIssue ? (result.primaryItemNumber || '') :
+              result.quantityIssue ? (result.primaryQuantity || '') :
+              result.descriptionIssue ? (result.primaryDescription || '') : '',
             comment
           });
         }

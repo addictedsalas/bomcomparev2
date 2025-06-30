@@ -409,8 +409,20 @@ export const ExcelComparisonExport: React.FC<ExcelComparisonExportProps> = ({
   // Generate action plan based on update preferences
   const generateActionPlan = () => {
     // Prepare data for action plan
-    const pdmUpdates = [];
-    const duroUpdates = [];
+    const pdmUpdates: Array<{
+      partNumber: string;
+      issueType: string;
+      currentValue: string;
+      newValue: string;
+      comment: string;
+    }> = [];
+    const duroUpdates: Array<{
+      partNumber: string;
+      issueType: string;
+      currentValue: string;
+      newValue: string;
+      comment: string;
+    }> = [];
 
     // Process all non-ignored items with update preferences
     results.results
@@ -437,13 +449,13 @@ export const ExcelComparisonExport: React.FC<ExcelComparisonExportProps> = ({
             partNumber: result.partNumber,
             issueType,
             currentValue: result.inSecondaryOnly ? 'Missing' :
-              result.itemNumberIssue ? result.primaryItemNumber :
-              result.quantityIssue ? result.primaryQuantity :
-              result.descriptionIssue ? result.primaryDescription : '',
+              result.itemNumberIssue ? (result.primaryItemNumber || '') :
+              result.quantityIssue ? (result.primaryQuantity || '') :
+              result.descriptionIssue ? (result.primaryDescription || '') : '',
             newValue: result.inSecondaryOnly ? 'Add part' :
-              result.itemNumberIssue ? result.secondaryItemNumber :
-              result.quantityIssue ? result.secondaryQuantity :
-              result.descriptionIssue ? result.secondaryDescription : '',
+              result.itemNumberIssue ? (result.secondaryItemNumber || '') :
+              result.quantityIssue ? (result.secondaryQuantity || '') :
+              result.descriptionIssue ? (result.secondaryDescription || '') : '',
             comment
           });
         }
@@ -454,13 +466,13 @@ export const ExcelComparisonExport: React.FC<ExcelComparisonExportProps> = ({
             partNumber: result.partNumber,
             issueType,
             currentValue: result.inPrimaryOnly ? 'Missing' :
-              result.itemNumberIssue ? result.secondaryItemNumber :
-              result.quantityIssue ? result.secondaryQuantity :
-              result.descriptionIssue ? result.secondaryDescription : '',
+              result.itemNumberIssue ? (result.secondaryItemNumber || '') :
+              result.quantityIssue ? (result.secondaryQuantity || '') :
+              result.descriptionIssue ? (result.secondaryDescription || '') : '',
             newValue: result.inPrimaryOnly ? 'Add part' :
-              result.itemNumberIssue ? result.primaryItemNumber :
-              result.quantityIssue ? result.primaryQuantity :
-              result.descriptionIssue ? result.primaryDescription : '',
+              result.itemNumberIssue ? (result.primaryItemNumber || '') :
+              result.quantityIssue ? (result.primaryQuantity || '') :
+              result.descriptionIssue ? (result.primaryDescription || '') : '',
             comment
           });
         }
@@ -552,5 +564,3 @@ export const ExcelComparisonExport: React.FC<ExcelComparisonExportProps> = ({
     </div>
   );
 };
-
-export { ExcelComparisonExport };

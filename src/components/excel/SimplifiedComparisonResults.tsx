@@ -88,7 +88,7 @@ export const SimplifiedComparisonResults: React.FC<SimplifiedComparisonResultsPr
     }));
   };
 
-  const handleSectionToggle = (section: keyof typeof visibleSections, visible: boolean) => {
+  const handleSectionToggle = (section: 'missingParts' | 'quantityIssues' | 'descriptionIssues', visible: boolean) => {
     setVisibleSections(prev => ({
       ...prev,
       [section]: visible

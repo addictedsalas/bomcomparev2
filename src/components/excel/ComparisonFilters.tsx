@@ -1,14 +1,16 @@
 import React from 'react';
 import { ExcelComparisonSummary } from '../../models/ExcelComparisonResult';
 
+type VisibleSections = {
+  missingParts: boolean;
+  quantityIssues: boolean;
+  descriptionIssues: boolean;
+};
+
 interface ComparisonFiltersProps {
   results: ExcelComparisonSummary;
-  visibleSections: {
-    missingParts: boolean;
-    quantityIssues: boolean;
-    descriptionIssues: boolean;
-  };
-  onSectionToggle: (section: keyof typeof visibleSections, visible: boolean) => void;
+  visibleSections: VisibleSections;
+  onSectionToggle: (section: keyof VisibleSections, visible: boolean) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
 }

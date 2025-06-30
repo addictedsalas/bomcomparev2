@@ -58,7 +58,8 @@ export const parseExcelFile = (file: File, isPrimary: boolean): Promise<ExcelBom
         // Map to our model with flexible column access
         const items: ExcelBomItem[] = [];
         
-        for (const row of jsonData) {
+        for (const rawRow of jsonData) {
+          const row = rawRow as Record<string, any>;
           // Find the actual keys in the row that match our target columns
           const findValue = (colIndex: number, fallbackKeys: string[]): string => {
             if (colIndex >= 0) {
