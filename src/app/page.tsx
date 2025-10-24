@@ -6,7 +6,7 @@ import { ExcelBomData } from '@/models/ExcelBomData';
 import { ExcelComparisonSummary } from '@/models/ExcelComparisonResult';
 import { parseExcelFile, parseExcelFileWithRawData } from '@/utils/excelParser';
 import { compareExcelBoms } from '@/services/excelComparisonService';
-import { SimplifiedComparisonResults } from '@/components/excel/SimplifiedComparisonResults';
+import { TabbedComparisonResults } from '@/components/excel/TabbedComparisonResults';
 import { TutorialModal } from '@/components/modals/TutorialModal';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 
@@ -187,6 +187,12 @@ export default function Home() {
     try {
       setLoading(true);
       setError(null);
+      
+      // Clear previous comparison data from localStorage
+      localStorage.removeItem('bom-comparison-duro-actions');
+      localStorage.removeItem('bom-comparison-solidworks-actions');
+      localStorage.removeItem('bom-comparison-comments');
+      
       const results = compareExcelBoms(primaryBom, secondaryBom);
       setComparisonResults(results);
     } catch (err) {
@@ -244,7 +250,7 @@ export default function Home() {
           </div>
 
         {/* Main Content */}
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="max-w-8xl mx-auto space-y-8">
           {/* File Upload Section */}
           <div className="glass-card-dark p-8 animate-slide-up">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -434,7 +440,7 @@ export default function Home() {
                 <h2 className="text-3xl font-bold text-glass mb-6 text-center">
                   Comparison Results
                 </h2>
-                <SimplifiedComparisonResults results={comparisonResults} originalDuroData={originalDuroData} />
+                <TabbedComparisonResults results={comparisonResults} originalDuroData={originalDuroData} />
               </div>
             </div>
           )}

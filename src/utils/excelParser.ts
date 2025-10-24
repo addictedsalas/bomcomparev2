@@ -66,7 +66,8 @@ export const parseExcelFile = (file: File, isPrimary: boolean): Promise<ExcelBom
         // Map to our model with flexible column access
         const items: ExcelBomItem[] = [];
         
-        for (const rawRow of jsonData) {
+        for (let rowIndex = 0; rowIndex < jsonData.length; rowIndex++) {
+          const rawRow = jsonData[rowIndex];
           const row = rawRow as Record<string, unknown>;
           // Find the actual keys in the row that match our target columns
           const findValue = (colIndex: number, fallbackKeys: string[]): string => {
@@ -125,6 +126,12 @@ export const parseExcelFile = (file: File, isPrimary: boolean): Promise<ExcelBom
           
           // Skip rows without part numbers
           if (!partNumber) continue;
+          
+          // For DURO BOMs, skip the first data row (parent assembly)
+          if (!isPrimary && rowIndex === 0) {
+            console.log(`Skipping first row (parent assembly): ${partNumber}`);
+            continue;
+          }
           
           // For DURO BOMs, skip items with LEVEL = 0
           if (!isPrimary && levelCol !== -1) {
@@ -262,6 +269,12 @@ export const parseExcelFileWithRawData = (file: File, isPrimary: boolean): Promi
           
           // Skip rows without part numbers
           if (!partNumber) continue;
+          
+          // For DURO BOMs, skip the first data row (parent assembly)
+          if (!isPrimary && i === 1) {
+            console.log(`Skipping first row (parent assembly): ${partNumber}`);
+            continue;
+          }
           
           // For DURO BOMs, skip items with LEVEL = 0
           if (!isPrimary && levelCol !== -1) {

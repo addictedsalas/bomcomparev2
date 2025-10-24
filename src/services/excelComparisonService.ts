@@ -1,41 +1,61 @@
 import { ExcelBomData } from "../models/ExcelBomData";
 import { ExcelComparisonResult, ExcelComparisonSummary } from "../models/ExcelComparisonResult";
-import { areTextsEquivalent, normalizeText } from "../utils/textUtils";
+import { areTextsEquivalent, normalizePartNumber } from "../utils/textUtils";
 
 export const compareExcelBoms = (
   primaryBom: ExcelBomData,
   secondaryBom: ExcelBomData
 ): ExcelComparisonSummary => {
-  console.log('🔍 Starting BOM comparison:');
-  console.log(`  Primary BOM: ${primaryBom.items.length} items`);
-  console.log(`  Secondary BOM: ${secondaryBom.items.length} items`);
+  console.log('\n═══════════════════════════════════════════════════════════');
+  console.log('🔍 BOM COMPARISON STARTED');
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log(`SOLIDWORKS BOM: ${primaryBom.items.length} items`);
+  console.log(`DURO BOM: ${secondaryBom.items.length} items`);
+  console.log('───────────────────────────────────────────────────────────\n');
   
   const results: ExcelComparisonResult[] = [];
   const partNumberMap = new Map<string, boolean>();
   
   // Process all parts from primary BOM
-  console.log('🔄 Processing Primary BOM items...');
   primaryBom.items.forEach((primaryItem, index) => {
     if (!primaryItem.partNumber) {
-      console.log(`  ⚠️  Skipping primary item ${index} - no part number`);
       return;
     }
     
-    console.log(`  📝 Processing primary item ${index}: ${primaryItem.partNumber} (Item #: ${primaryItem.itemNumber})`);
-    
-    // Normalize part number for comparison
-    const normalizedPartNumber = normalizeText(primaryItem.partNumber);
+    // Normalize part number for comparison (handles DURO's suffix issues)
+    const normalizedPartNumber = normalizePartNumber(primaryItem.partNumber);
     partNumberMap.set(normalizedPartNumber, true);
     
     // Find matching part in secondary BOM
     const secondaryItem = secondaryBom.items.find(
-      item => normalizeText(item.partNumber) === normalizedPartNumber
+      item => normalizePartNumber(item.partNumber) === normalizedPartNumber
     );
     
-    if (secondaryItem) {
-      console.log(`    ✅ Found match in DURO: ${secondaryItem.partNumber} (Item #: ${secondaryItem.itemNumber})`);
-    } else {
-      console.log(`    ❌ No match found in DURO for: ${primaryItem.partNumber}`);
+    // Log first 5 comparisons with detailed info
+    if (index < 5) {
+      console.log(`\n[COMPARISON ${index + 1}]`);
+      console.log(`SOLIDWORKS: "${primaryItem.partNumber}"`);
+      console.log(`  → Normalized: "${normalizedPartNumber}"`);
+      
+      if (secondaryItem) {
+        console.log(`DURO: "${secondaryItem.partNumber}"`);
+        console.log(`  → Normalized: "${normalizePartNumber(secondaryItem.partNumber)}"`);
+        console.log(`✅ MATCH FOUND`);
+      } else {
+        console.log(`DURO: NOT FOUND`);
+        console.log(`❌ NO MATCH`);
+        
+        // Show what's available in DURO for debugging
+        const similarParts = secondaryBom.items
+          .filter(item => item.partNumber.toLowerCase().includes(primaryItem.partNumber.toLowerCase().substring(0, 8)))
+          .slice(0, 3);
+        if (similarParts.length > 0) {
+          console.log(`  Similar parts in DURO:`);
+          similarParts.forEach(part => {
+            console.log(`    - "${part.partNumber}" → normalized: "${normalizePartNumber(part.partNumber)}"`);
+          });
+        }
+      }
     }
     
     if (secondaryItem) {
@@ -50,33 +70,14 @@ export const compareExcelBoms = (
         secondaryDescription: secondaryItem.description,
         
         // Check for issues using normalized comparison
-        itemNumberIssue: (() => {
-          const issueDifferent = !areTextsEquivalent(primaryItem.itemNumber, secondaryItem.itemNumber);
-          console.log(`    🔢 Item Number Check for ${primaryItem.partNumber}:`, {
-            solidworks: `"${primaryItem.itemNumber}"`,
-            duro: `"${secondaryItem.itemNumber}"`,
-            areEquivalent: areTextsEquivalent(primaryItem.itemNumber, secondaryItem.itemNumber),
-            hasIssue: issueDifferent
-          });
-          if (issueDifferent) {
-            console.log(`    🔸 ITEM NUMBER ISSUE DETECTED for ${primaryItem.partNumber}:`, {
-              solidworks: `"${primaryItem.itemNumber}"`,
-              duro: `"${secondaryItem.itemNumber}"`,
-              normalizedSolidworks: `"${normalizeText(primaryItem.itemNumber)}"`,
-              normalizedDuro: `"${normalizeText(secondaryItem.itemNumber)}"`
-            });
-          }
-          return issueDifferent;
-        })(),
+        itemNumberIssue: !areTextsEquivalent(primaryItem.itemNumber, secondaryItem.itemNumber),
         quantityIssue: !areTextsEquivalent(primaryItem.quantity, secondaryItem.quantity),
         descriptionIssue: !areTextsEquivalent(primaryItem.description, secondaryItem.description),
       };
       
-      console.log(`    ➕ Adding result for ${primaryItem.partNumber} - itemNumberIssue: ${result.itemNumberIssue}`);
       results.push(result);
     } else {
       // Part only in primary BOM
-      console.log(`    ➕ Adding missing part result for ${primaryItem.partNumber} (Primary only)`);
       results.push({
         partNumber: primaryItem.partNumber,
         primaryItemNumber: primaryItem.itemNumber,
@@ -87,13 +88,12 @@ export const compareExcelBoms = (
     }
   });
   
-  console.log(`\n📊 After processing primary BOM: ${results.length} results total`);
   
   // Find parts only in secondary BOM
   secondaryBom.items.forEach(secondaryItem => {
     if (!secondaryItem.partNumber) return;
     
-    const normalizedPartNumber = normalizeText(secondaryItem.partNumber);
+    const normalizedPartNumber = normalizePartNumber(secondaryItem.partNumber);
     if (!partNumberMap.has(normalizedPartNumber)) {
       results.push({
         partNumber: secondaryItem.partNumber,
@@ -106,14 +106,13 @@ export const compareExcelBoms = (
   });
   
   // Calculate summary statistics
-  const itemNumberIssuesCount = results.filter(r => r.itemNumberIssue).length;
   const summary: ExcelComparisonSummary = {
     totalParts: results.length,
     matchingParts: results.filter(r => 
       !r.itemNumberIssue && !r.quantityIssue && !r.descriptionIssue && 
       !r.inPrimaryOnly && !r.inSecondaryOnly
     ).length,
-    itemNumberIssues: itemNumberIssuesCount,
+    itemNumberIssues: results.filter(r => r.itemNumberIssue).length,
     quantityIssues: results.filter(r => r.quantityIssue).length,
     descriptionIssues: results.filter(r => r.descriptionIssue).length,
     inPrimaryOnly: results.filter(r => r.inPrimaryOnly).length,
@@ -121,30 +120,17 @@ export const compareExcelBoms = (
     results: results,
   };
   
-  // Debug: Count and list all results with issues
-  const itemNumberIssues = results.filter(r => r.itemNumberIssue);
-  console.log('\n🔍 DETAILED ANALYSIS:');
-  console.log(`📊 Total results: ${results.length}`);
-  console.log(`🔢 Item number issues found: ${itemNumberIssues.length}`);
-  
-  if (itemNumberIssues.length > 0) {
-    console.log('\n📋 ALL Item Number Issues:');
-    itemNumberIssues.forEach((result, index) => {
-      console.log(`  ${index + 1}. ${result.partNumber}:`);
-      console.log(`     SOLIDWORKS: "${result.primaryItemNumber}"`);
-      console.log(`     DURO: "${result.secondaryItemNumber}"`);
-    });
-  }
-  
-  console.log('\n📊 Final Comparison Summary:', {
-    totalParts: summary.totalParts,
-    matchingParts: summary.matchingParts,
-    itemNumberIssues: summary.itemNumberIssues,
-    quantityIssues: summary.quantityIssues,
-    descriptionIssues: summary.descriptionIssues,
-    inPrimaryOnly: summary.inPrimaryOnly,
-    inSecondaryOnly: summary.inSecondaryOnly
-  });
+  console.log('\n═══════════════════════════════════════════════════════════');
+  console.log('📊 COMPARISON SUMMARY');
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log(`Total Parts: ${summary.totalParts}`);
+  console.log(`✅ Matching: ${summary.matchingParts}`);
+  console.log(`❌ Missing in SOLIDWORKS: ${summary.inSecondaryOnly}`);
+  console.log(`❌ Missing in DURO: ${summary.inPrimaryOnly}`);
+  console.log(`⚠️  Item Number Issues: ${summary.itemNumberIssues}`);
+  console.log(`⚠️  Quantity Issues: ${summary.quantityIssues}`);
+  console.log(`⚠️  Description Issues: ${summary.descriptionIssues}`);
+  console.log('═══════════════════════════════════════════════════════════\n');
   
   return summary;
 };
