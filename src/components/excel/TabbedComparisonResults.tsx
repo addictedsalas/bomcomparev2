@@ -201,14 +201,11 @@ export const TabbedComparisonResults: React.FC<TabbedComparisonResultsProps> = (
 
       {/* Export Buttons */}
       <div className="flex gap-4 justify-end">
+        {/* Temporarily hidden while determining correct export method */}
         <button
           onClick={handleExportDuroUpdates}
           disabled={duroActionCount === 0}
-          className={`px-6 py-3 rounded-lg font-medium transition-all ${
-            duroActionCount > 0
-              ? 'glass-button text-glass hover:scale-105'
-              : 'bg-gray-400 bg-opacity-30 text-gray-500 cursor-not-allowed'
-          }`}
+          className="hidden"
         >
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
