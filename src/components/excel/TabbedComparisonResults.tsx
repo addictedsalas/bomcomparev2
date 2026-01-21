@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ExcelComparisonSummary } from '../../models/ExcelComparisonResult';
 import { UnifiedIssueTable } from './UnifiedIssueTable';
-import { exportDuroUpdates, exportSolidworksActionReport } from '../../services/duroUpdateExportService';
+import { exportSolidworksActionReport } from '../../services/duroUpdateExportService';
+import { syncItemNumbersToDuro } from '../../services/duroExportService';
+import { DuroChildComponent } from '../../services/duroApiService';
 
 interface TabbedComparisonResultsProps {
   results: ExcelComparisonSummary;
   originalDuroData?: unknown[] | null;
+  duroAssemblyId?: string;
 }
 
 type TabType = 'missing' | 'itemNumber' | 'quantity' | 'ignored';
 
-export const TabbedComparisonResults: React.FC<TabbedComparisonResultsProps> = ({ results }) => {
+export const TabbedComparisonResults: React.FC<TabbedComparisonResultsProps> = ({ results, originalDuroData, duroAssemblyId }) => {
   const [activeTab, setActiveTab] = useState<TabType>('missing');
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const [duroActions, setDuroActions] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('bom-comparison-duro-actions');
@@ -107,8 +111,22 @@ export const TabbedComparisonResults: React.FC<TabbedComparisonResultsProps> = (
     });
   };
 
-  const handleExportDuroUpdates = () => {
-    exportDuroUpdates(results.results, duroActions, comments);
+  const handleSyncToDuro = async () => {
+    if (!originalDuroData || !duroAssemblyId) return;
+    
+    setIsSyncing(true);
+    // Cast originalDuroData to the correct type since we know it comes from the API fetch
+    const success = await syncItemNumbersToDuro(
+      results, 
+      originalDuroData as DuroChildComponent[], 
+      duroAssemblyId
+    );
+    setIsSyncing(false);
+    
+    if (success) {
+      // Ideally we would refresh the data here, but for now just letting the user know is enough.
+      // They can re-fetch to verify.
+    }
   };
 
   const handleExportSolidworksReport = () => {
@@ -137,8 +155,9 @@ export const TabbedComparisonResults: React.FC<TabbedComparisonResultsProps> = (
     { id: 'ignored' as TabType, label: 'Ignored Items', count: tabCounts.ignored, color: 'gray' },
   ];
 
-  const duroActionCount = Object.values(duroActions).filter(Boolean).length;
   const swActionCount = Object.values(solidworksActions).filter(Boolean).length;
+  const hasItemNumberIssues = results.itemNumberIssues > 0;
+  const canSync = !!duroAssemblyId && !!originalDuroData && hasItemNumberIssues;
 
   return (
     <div className="space-y-6">
@@ -201,19 +220,35 @@ export const TabbedComparisonResults: React.FC<TabbedComparisonResultsProps> = (
 
       {/* Export Buttons */}
       <div className="flex gap-4 justify-end">
-        {/* Temporarily hidden while determining correct export method */}
-        <button
-          onClick={handleExportDuroUpdates}
-          disabled={duroActionCount === 0}
-          className="hidden"
-        >
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            Export DURO Updates ({duroActionCount})
-          </div>
-        </button>
+        {/* Sync Button - Only visible if we have an assembly ID and issues */}
+        {canSync && (
+          <button
+            onClick={handleSyncToDuro}
+            disabled={isSyncing}
+            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              isSyncing
+                ? 'bg-yellow-600 bg-opacity-50 cursor-wait'
+                : 'bg-yellow-500 hover:bg-yellow-400 text-black shadow-lg hover:shadow-yellow-500/20'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {isSyncing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Sync Item Numbers ({results.itemNumberIssues})
+                </>
+              )}
+            </div>
+          </button>
+        )}
+
         <button
           onClick={handleExportSolidworksReport}
           disabled={swActionCount === 0}

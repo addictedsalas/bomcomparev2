@@ -33,6 +33,11 @@ export async function POST(request: Request) {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('❌ Upstream API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        details: data
+      });
       return NextResponse.json(
         { error: `Upstream API Error: ${response.status} ${response.statusText}`, details: data },
         { status: response.status }

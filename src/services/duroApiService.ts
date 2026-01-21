@@ -28,6 +28,7 @@ export interface DuroChildComponent {
   itemNumber: string;
   quantity: number;
   component: {
+    id: string;
     name: string;
     cpn: {
       displayValue: string;
@@ -131,7 +132,7 @@ export class DuroApiService {
   /**
    * Fetch BOM for a specific Component ID
    */
-  static async getAssemblyBom(componentId: string): Promise<ExcelBomData> {
+  static async getAssemblyBom(componentId: string): Promise<{ items: ExcelBomItem[], rawChildren: DuroChildComponent[] }> {
     // We need to fetch children and their details (CPN, Name, Qty, Item No)
     // Based on the user provided docs:
     /*
@@ -155,6 +156,7 @@ export class DuroApiService {
           itemNumber
           quantity
           component {
+            id
             name
             cpn {
               displayValue
@@ -179,13 +181,44 @@ export class DuroApiService {
       quantity: child.quantity !== undefined && child.quantity !== null ? String(child.quantity) : '1'
     }));
 
-    return { items };
+    return { items, rawChildren: component.children };
+  }
+
+  /**
+   * Fetch raw children for a specific Component ID (used for updates)
+   */
+  static async getAssemblyChildren(componentId: string): Promise<DuroChildComponent[]> {
+    const query = `{
+      componentsByIds(ids: ["${componentId}"]) {
+        id
+        children {
+          itemNumber
+          quantity
+          component {
+            id
+            name
+            cpn {
+              displayValue
+            }
+          }
+        }
+      }
+    }`;
+
+    const result = await this.query(query) as DuroComponentByIdResponse;
+    const component = result.data.componentsByIds[0];
+    
+    if (!component) {
+      throw new Error('Component not found');
+    }
+
+    return component.children;
   }
   
   /**
    * Combined method to search and get BOM
    */
-  static async fetchBomByAssemblyNumber(assemblyNumber: string): Promise<{ bom: ExcelBomData, rawData: unknown }> {
+  static async fetchBomByAssemblyNumber(assemblyNumber: string): Promise<{ bom: ExcelBomData, rawData: DuroChildComponent[], assemblyId: string }> {
     // 1. Search for the component ID
     // Since we can't easily filter server-side without knowing the exact filter syntax,
     // and fetching ALL components is too heavy, we might need a better way.
@@ -207,11 +240,52 @@ export class DuroApiService {
     }
 
     // 2. Get the BOM
-    const bomData = await this.getAssemblyBom(node.id);
+    const { items, rawChildren } = await this.getAssemblyBom(node.id);
     
     return {
-      bom: bomData,
-      rawData: [node] // Store the node as raw data for reference
+      bom: { items },
+      rawData: rawChildren,
+      assemblyId: node.id
     };
+  }
+
+  /**
+   * Update an assembly's BOM (children)
+   * This REPLACES the existing children list with the provided list.
+   */
+  static async updateAssemblyBOM(assemblyId: string, children: { componentId: string; quantity: number; itemNumber: string }[]): Promise<unknown> {
+    // Construct the mutation
+    // We need to format the children array as a GraphQL input string since we're building the query manually
+    // Ideally we should use variables, but for now we'll inline carefully.
+    
+    const childrenString = children.map(child => {
+      const parsedItemNumber = parseInt(child.itemNumber || '0', 10);
+      const safeItemNumber = isNaN(parsedItemNumber) ? 0 : parsedItemNumber;
+      
+      return `{
+      componentId: ${JSON.stringify(child.componentId)},
+      quantity: ${child.quantity},
+      itemNumber: ${safeItemNumber}
+    }`;
+    }).join(',\n');
+
+    const query = `mutation {
+      updateComponent(input: {
+        id: "${assemblyId}",
+        children: [
+          ${childrenString}
+        ]
+      }) {
+        id
+        children {
+          itemNumber
+          quantity
+        }
+      }
+    }`;
+
+    console.log('🚀 Sending Update Mutation:', query);
+
+    return this.query(query);
   }
 }

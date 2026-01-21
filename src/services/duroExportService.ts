@@ -1,10 +1,84 @@
 import * as XLSX from 'xlsx';
 import { ExcelComparisonSummary, ExcelComparisonResult } from '../models/ExcelComparisonResult';
+import { DuroApiService, DuroChildComponent } from './duroApiService';
 
 export interface DuroUpdateRecord {
   [key: string]: string;
   // Dynamic interface - columns determined at runtime based on template
 }
+
+export const syncItemNumbersToDuro = async (
+  comparisonResults: ExcelComparisonSummary,
+  originalDuroBomData: DuroChildComponent[],
+  assemblyId: string
+): Promise<boolean> => {
+  try {
+    // 1. Check for item number issues
+    const itemNumberUpdates = new Map<string, string>();
+    comparisonResults.results
+      .filter(result => 
+        result.itemNumberIssue && 
+        !result.inPrimaryOnly && 
+        !result.inSecondaryOnly
+      )
+      .forEach(result => {
+        if (result.primaryItemNumber) {
+          itemNumberUpdates.set(result.partNumber, result.primaryItemNumber);
+        }
+      });
+
+    if (itemNumberUpdates.size === 0) {
+      alert('No item number mismatches found to sync.');
+      return false;
+    }
+
+    // 2. Confirm with user
+    const confirmMessage = `Found ${itemNumberUpdates.size} item number mismatches.\n\n` +
+      `This will update the Item Numbers in DURO to match SOLIDWORKS for these components.\n\n` +
+      `Are you sure you want to proceed with this API update?`;
+    
+    if (!confirm(confirmMessage)) {
+      return false;
+    }
+
+    // 3. Construct updated children list
+    // We iterate over the ORIGINAL DURO children to preserve all IDs and existing data
+    const updatedChildren = originalDuroBomData.map(child => {
+      const partNumber = child.component?.cpn?.displayValue;
+      
+      // If this part has an update, use the new item number
+      if (partNumber && itemNumberUpdates.has(partNumber)) {
+        return {
+          componentId: child.component.id,
+          quantity: child.quantity,
+          itemNumber: itemNumberUpdates.get(partNumber)!
+        };
+      }
+      
+      // Otherwise keep existing
+      return {
+        componentId: child.component.id,
+        quantity: child.quantity,
+        itemNumber: child.itemNumber ? String(child.itemNumber) : ""
+      };
+    });
+
+    console.log(`Syncing ${updatedChildren.length} children to DURO assembly ${assemblyId}...`);
+    console.log('📦 Payload:', updatedChildren);
+
+    // 4. Call API
+    await DuroApiService.updateAssemblyBOM(assemblyId, updatedChildren);
+
+    alert(`✅ Successfully synced ${itemNumberUpdates.size} item numbers to DURO!`);
+    return true;
+
+  } catch (error: unknown) {
+    console.error('Failed to sync to DURO:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    alert(`❌ Failed to sync to DURO: ${errorMessage}`);
+    return false;
+  }
+};
 
 export const generateDuroItemNumberUpdate = async (
   comparisonResults: ExcelComparisonSummary,

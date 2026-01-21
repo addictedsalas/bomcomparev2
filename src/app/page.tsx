@@ -18,6 +18,7 @@ export default function Home() {
   const [secondaryFile, setSecondaryFile] = useState<File | null>(null);
   const [duroSourceType, setDuroSourceType] = useState<'file' | 'api'>('file');
   const [assemblyNumber, setAssemblyNumber] = useState<string>('');
+  const [duroAssemblyId, setDuroAssemblyId] = useState<string | null>(null);
   const [comparisonResults, setComparisonResults] = useState<ExcelComparisonSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,10 +105,11 @@ export default function Home() {
       setLoading(true);
       setError(null);
       
-      const { bom, rawData } = await DuroApiService.fetchBomByAssemblyNumber(assemblyNumber.trim());
+      const { bom, rawData, assemblyId } = await DuroApiService.fetchBomByAssemblyNumber(assemblyNumber.trim());
       
       setSecondaryBom(bom);
       setOriginalDuroData(rawData as unknown[]);
+      setDuroAssemblyId(assemblyId);
       
       // Reset comparison results
       setComparisonResults(null);
@@ -466,7 +468,7 @@ export default function Home() {
                             value={assemblyNumber}
                             onChange={(e) => setAssemblyNumber(e.target.value)}
                             placeholder="e.g. 406-00043"
-                            className="flex-1 rounded-lg border border-glass-border bg-glass-dark text-white shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2 outline-none"
+                            className="flex-1 rounded-lg border border-glass-border bg-white text-black placeholder-gray-500 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2 outline-none"
                             onKeyDown={(e) => e.key === 'Enter' && handleFetchDuroBom()}
                           />
                           <button
@@ -567,7 +569,11 @@ export default function Home() {
                 <h2 className="text-3xl font-bold text-glass mb-6 text-center">
                   Comparison Results
                 </h2>
-                <TabbedComparisonResults results={comparisonResults} originalDuroData={originalDuroData} />
+                <TabbedComparisonResults 
+                  results={comparisonResults} 
+                  originalDuroData={originalDuroData} 
+                  duroAssemblyId={duroAssemblyId || undefined}
+                />
               </div>
             </div>
           )}
