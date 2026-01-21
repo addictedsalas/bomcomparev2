@@ -6,6 +6,7 @@ import { ExcelBomData } from '@/models/ExcelBomData';
 import { ExcelComparisonSummary } from '@/models/ExcelComparisonResult';
 import { parseExcelFile, parseExcelFileWithRawData } from '@/utils/excelParser';
 import { compareExcelBoms } from '@/services/excelComparisonService';
+import { DuroApiService } from '@/services/duroApiService';
 import { TabbedComparisonResults } from '@/components/excel/TabbedComparisonResults';
 import { TutorialModal } from '@/components/modals/TutorialModal';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
@@ -15,6 +16,8 @@ export default function Home() {
   const [secondaryBom, setSecondaryBom] = useState<ExcelBomData | null>(null);
   const [primaryFile, setPrimaryFile] = useState<File | null>(null);
   const [secondaryFile, setSecondaryFile] = useState<File | null>(null);
+  const [duroSourceType, setDuroSourceType] = useState<'file' | 'api'>('file');
+  const [assemblyNumber, setAssemblyNumber] = useState<string>('');
   const [comparisonResults, setComparisonResults] = useState<ExcelComparisonSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +89,37 @@ export default function Home() {
     } catch (err) {
       setError('Failed to parse DURO Excel file. Please check the format.');
       console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleFetchDuroBom = async () => {
+    if (!assemblyNumber.trim()) {
+      setError('Please enter an Assembly Number.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { bom, rawData } = await DuroApiService.fetchBomByAssemblyNumber(assemblyNumber.trim());
+      
+      setSecondaryBom(bom);
+      setOriginalDuroData(rawData as unknown[]);
+      
+      // Reset comparison results
+      setComparisonResults(null);
+      
+      // Clear file selection if any
+      setSecondaryFile(null);
+      if (secondaryFileInputRef.current) secondaryFileInputRef.current.value = '';
+      
+    } catch (err: unknown) {
+      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to fetch BOM from DURO: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -177,6 +211,17 @@ export default function Home() {
     }
   };
   
+  const handleDeleteSecondaryFile = () => {
+    setSecondaryBom(null);
+    setSecondaryFile(null);
+    setOriginalDuroData(null);
+    setComparisonResults(null);
+    setAssemblyNumber('');
+    
+    // Reset file input
+    if (secondaryFileInputRef.current) secondaryFileInputRef.current.value = '';
+  };
+  
   // Action handlers
   const handleCompare = () => {
     if (!primaryBom || !secondaryBom) {
@@ -208,7 +253,9 @@ export default function Home() {
     setSecondaryBom(null);
     setPrimaryFile(null);
     setSecondaryFile(null);
+    setOriginalDuroData(null);
     setComparisonResults(null);
+    setAssemblyNumber('');
     setError(null);
     
     if (primaryFileInputRef.current) primaryFileInputRef.current.value = '';
@@ -319,65 +366,145 @@ export default function Home() {
 
               {/* DURO BOM Upload */}
               <div className="space-y-4">
-                <h2 className="text-2xl font-bold text-glass flex items-center">
-                  <svg className="w-8 h-8 mr-3 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  DURO BOM
-                </h2>
-                
-                <div 
-                  className={`glass-upload p-8 text-center cursor-pointer ${
-                    secondaryDragActive ? 'drag-active' : ''
-                  }`}
-                  onDragEnter={handleSecondaryDrag}
-                  onDragOver={handleSecondaryDrag}
-                  onDragLeave={handleSecondaryDrag}
-                  onDrop={handleSecondaryDrop}
-                  onClick={() => secondaryFileInputRef.current?.click()}
-                >
-                  <input
-                    type="file"
-                    ref={secondaryFileInputRef}
-                    onChange={handleSecondaryFileChange}
-                    accept=".xlsx,.xls"
-                    className="hidden"
-                  />
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-glass flex items-center">
+                    <svg className="w-8 h-8 mr-3 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    DURO BOM
+                  </h2>
                   
-                  {!secondaryFile ? (
-                    <div>
-                      <svg className="w-16 h-16 mx-auto text-glass mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <p className="text-glass text-lg mb-2">Drop your DURO Excel file here</p>
-                      <p className="text-glass-secondary text-sm">or click to browse</p>
-                      <p className="text-glass-secondary text-xs mt-2">
-                        Expected columns: Item Number, CPN, Description, Quantity
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex items-center justify-center mb-4">
-                        <svg className="w-12 h-12 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <p className="text-glass font-medium mb-2">{secondaryFile.name}</p>
-                      <p className="text-green-300 font-medium mb-4">✓ {secondaryBom?.items.length} parts loaded</p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSecondaryFile(null);
-                          setSecondaryBom(null);
-                          if (secondaryFileInputRef.current) secondaryFileInputRef.current.value = '';
-                        }}
-                        className="glass-button px-4 py-2 text-glass text-sm"
-                      >
-                        Remove File
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex bg-glass-dark rounded-lg p-1 border border-glass-border">
+                    <button
+                      onClick={() => setDuroSourceType('file')}
+                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                        duroSourceType === 'file' 
+                          ? 'bg-glass-button text-white shadow-sm' 
+                          : 'text-glass-secondary hover:text-white'
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      onClick={() => setDuroSourceType('api')}
+                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                        duroSourceType === 'api' 
+                          ? 'bg-glass-button text-white shadow-sm' 
+                          : 'text-glass-secondary hover:text-white'
+                      }`}
+                    >
+                      Import from API
+                    </button>
+                  </div>
                 </div>
+                
+                {duroSourceType === 'file' ? (
+                  // File Upload UI
+                  <div 
+                    className={`glass-upload p-8 text-center cursor-pointer ${
+                      secondaryDragActive ? 'drag-active' : ''
+                    }`}
+                    onDragEnter={handleSecondaryDrag}
+                    onDragOver={handleSecondaryDrag}
+                    onDragLeave={handleSecondaryDrag}
+                    onDrop={handleSecondaryDrop}
+                    onClick={() => secondaryFileInputRef.current?.click()}
+                  >
+                    <input
+                      type="file"
+                      ref={secondaryFileInputRef}
+                      onChange={handleSecondaryFileChange}
+                      accept=".xlsx,.xls"
+                      className="hidden"
+                    />
+                    
+                    {!secondaryBom ? (
+                      <div>
+                        <svg className="w-16 h-16 mx-auto text-glass mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p className="text-glass text-lg mb-2">Drop your DURO Excel file here</p>
+                        <p className="text-glass-secondary text-sm">or click to browse</p>
+                        <p className="text-glass-secondary text-xs mt-2">
+                          Expected columns: Item Number, CPN, Description, Quantity
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-center justify-center mb-4">
+                          <svg className="w-12 h-12 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <p className="text-glass font-medium mb-2">{secondaryFile ? secondaryFile.name : 'DURO File Loaded'}</p>
+                        <p className="text-green-300 font-medium mb-4">✓ {secondaryBom?.items.length} parts loaded</p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSecondaryFile();
+                          }}
+                          className="glass-button px-4 py-2 text-glass text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // API Import UI
+                  <div className="glass-upload p-8 text-center">
+                    {!secondaryBom ? (
+                      <div>
+                        <svg className="w-16 h-16 mx-auto text-glass mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <p className="text-glass text-lg mb-4">Enter DURO Assembly Number</p>
+                        
+                        <div className="flex gap-2 max-w-sm mx-auto">
+                          <input
+                            type="text"
+                            value={assemblyNumber}
+                            onChange={(e) => setAssemblyNumber(e.target.value)}
+                            placeholder="e.g. 406-00043"
+                            className="flex-1 rounded-lg border border-glass-border bg-glass-dark text-white shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2 outline-none"
+                            onKeyDown={(e) => e.key === 'Enter' && handleFetchDuroBom()}
+                          />
+                          <button
+                            onClick={handleFetchDuroBom}
+                            disabled={loading || !assemblyNumber.trim()}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                              loading || !assemblyNumber.trim()
+                                ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+                                : 'bg-green-600 hover:bg-green-500 text-white'
+                            }`}
+                          >
+                            {loading ? '...' : 'Fetch'}
+                          </button>
+                        </div>
+                        <p className="text-glass-secondary text-xs mt-4">
+                          Fetches the BOM directly from the DURO API
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-center justify-center mb-4">
+                          <svg className="w-12 h-12 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <p className="text-glass font-medium mb-1">DURO BOM Fetched</p>
+                        <p className="text-green-300 font-bold mb-2">{assemblyNumber}</p>
+                        <p className="text-green-300 font-medium mb-4">✓ {secondaryBom.items.length} parts loaded</p>
+                        <button
+                          onClick={handleDeleteSecondaryFile}
+                          className="glass-button px-4 py-2 text-glass text-sm"
+                        >
+                          Clear & Search Again
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

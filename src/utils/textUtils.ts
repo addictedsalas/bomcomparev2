@@ -7,10 +7,10 @@
  * @param text The text to normalize
  * @returns Normalized text for comparison
  */
-export const normalizeText = (text: string | undefined | null): string => {
-  if (!text) return '';
+export const normalizeText = (text: string | number | undefined | null): string => {
+  if (text === undefined || text === null) return '';
   
-  return text
+  return String(text)
     .toLowerCase()                // Convert to lowercase
     .replace(/\s+/g, ' ')         // Replace multiple whitespace characters with a single space
     .trim();                      // Remove leading and trailing whitespace
@@ -39,10 +39,10 @@ export const normalizeText = (text: string | undefined | null): string => {
  * @param partNumber The part number to normalize
  * @returns Normalized part number for comparison
  */
-export const normalizePartNumber = (partNumber: string | undefined | null): string => {
-  if (!partNumber) return '';
+export const normalizePartNumber = (partNumber: string | number | undefined | null): string => {
+  if (partNumber === undefined || partNumber === null) return '';
   
-  let normalized = partNumber
+  let normalized = String(partNumber)
     .toLowerCase()                // Convert to lowercase
     .replace(/\s+/g, ' ')         // Replace multiple whitespace characters with a single space
     .trim();                      // Remove leading and trailing whitespace
@@ -69,10 +69,10 @@ export const normalizePartNumber = (partNumber: string | undefined | null): stri
  * @param partNumber The part number to convert to DURO format
  * @returns Part number in DURO export format with duplicated suffix
  */
-export const toDuroFormat = (partNumber: string | undefined | null): string => {
-  if (!partNumber) return '';
+export const toDuroFormat = (partNumber: string | number | undefined | null): string => {
+  if (partNumber === undefined || partNumber === null) return '';
   
-  const trimmed = partNumber.trim();
+  const trimmed = String(partNumber).trim();
   
   // Check if it already has a duplicated suffix (e.g., -00-00, -02-02)
   if (/(-\d{2})\1$/.test(trimmed)) {
@@ -97,6 +97,6 @@ export const toDuroFormat = (partNumber: string | undefined | null): string => {
  * @param text2 Second text to compare
  * @returns True if the normalized texts are equal
  */
-export const areTextsEquivalent = (text1: string | undefined | null, text2: string | undefined | null): boolean => {
+export const areTextsEquivalent = (text1: string | number | undefined | null, text2: string | number | undefined | null): boolean => {
   return normalizeText(text1) === normalizeText(text2);
 };
